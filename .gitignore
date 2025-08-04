@@ -1,0 +1,5 @@
+# Ignore all .jpeg files in backend/images/
+backend/images/*.jpeg
+
+# Ignore all .jpg files in backend/known_faces/
+backend/known_faces/*.jpg
