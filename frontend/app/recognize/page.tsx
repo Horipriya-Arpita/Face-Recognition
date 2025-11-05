@@ -293,6 +293,7 @@
 
 "use client";
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 
 type Box = {
   top: number;
@@ -302,7 +303,7 @@ type Box = {
   name: string;
 };
 
-export default function Home() {
+export default function RecognizePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -324,16 +325,16 @@ export default function Home() {
 
     boxes.forEach((box) => {
       const { top, right, bottom, left, name } = box;
-      ctx.strokeStyle = "green";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 3;
       ctx.strokeRect(left, top, right - left, bottom - top);
 
-      ctx.fillStyle = "green";
-      ctx.font = "16px Arial";
-      ctx.fillText(name, left + 5, top - 5);
+      ctx.fillStyle = "#10b981";
+      ctx.font = "bold 18px Arial";
+      ctx.fillText(name, left + 5, top - 10);
 
       // Log and Toast (if new)
-      if (!logs.includes(name)) {
+      if (!logs.includes(name) && name !== "Unknown") {
         setLogs((prev) => [...prev, name]);
         showToast(`${name} recognized`);
       }
@@ -343,16 +344,7 @@ export default function Home() {
   const showToast = (message: string) => {
     const toast = document.createElement("div");
     toast.innerText = message;
-    toast.style.position = "fixed";
-    toast.style.bottom = "20px";
-    toast.style.left = "50%";
-    toast.style.transform = "translateX(-50%)";
-    toast.style.background = "#4caf50";
-    toast.style.color = "#fff";
-    toast.style.padding = "10px 20px";
-    toast.style.borderRadius = "5px";
-    toast.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
-    toast.style.zIndex = "1000";
+    toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 font-semibold animate-bounce";
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2500);
   };
@@ -395,6 +387,7 @@ export default function Home() {
   const startRecognition = () => {
     if (!intervalRef.current) {
       setIsRunning(true);
+      setError(null);
       intervalRef.current = setInterval(sendFrame, 1000);
     }
   };
@@ -407,14 +400,18 @@ export default function Home() {
     }
   };
 
+  const clearLogs = () => {
+    setLogs([]);
+  };
+
   const exportCSV = () => {
-    const csv = logs.join("\n");
+    const csv = "Name\n" + logs.join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "recognized_people.csv";
+    a.download = `recognized_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -428,7 +425,7 @@ export default function Home() {
           videoRef.current.play();
         }
       } catch {
-        setError("Camera access denied");
+        setError("Camera access denied. Please allow camera permissions.");
       }
     };
     startCamera();
@@ -436,34 +433,144 @@ export default function Home() {
   }, []);
 
   return (
-    <div style={{ padding: "1rem", fontFamily: "Arial" }}>
-      <h1>Face Recognition Dashboard</h1>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              📷 Face Recognition Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Real-time facial recognition and attendance tracking
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-lg"
+          >
+            ← Back to Register
+          </Link>
+        </div>
 
-      <div style={{ position: "relative" }}>
-        <video ref={videoRef} style={{ width: "640px" }} muted autoPlay />
-        <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0 }} />
-      </div>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            ⚠️ {error}
+          </div>
+        )}
 
-      <div style={{ marginTop: "1rem" }}>
-        <button onClick={startRecognition} disabled={isRunning}>▶ Start</button>
-        <button onClick={stopRecognition} disabled={!isRunning}>⏹ Stop</button>
-        <button onClick={sendFrame}>📷 Recognize Once</button>
-        <button onClick={exportCSV} disabled={logs.length === 0}>📤 Export CSV</button>
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Video Feed */}
+          <div className="lg:col-span-2">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Live Camera Feed
+              </h2>
+              <div className="relative bg-black rounded-lg overflow-hidden">
+                <video
+                  ref={videoRef}
+                  className="w-full h-auto"
+                  muted
+                  autoPlay
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 w-full h-full"
+                />
+              </div>
 
-      <div style={{ marginTop: "1rem" }}>
-        <h3>Recognized People</h3>
-        <ul>
-          {logs.map((name, index) => (
-            <li key={index}>✅ {name}</li>
-          ))}
-        </ul>
+              {/* Control Buttons */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                <button
+                  onClick={startRecognition}
+                  disabled={isRunning}
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg"
+                >
+                  ▶ Start
+                </button>
+                <button
+                  onClick={stopRecognition}
+                  disabled={!isRunning}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg"
+                >
+                  ⏹ Stop
+                </button>
+                <button
+                  onClick={sendFrame}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-lg"
+                >
+                  📸 Snapshot
+                </button>
+                <button
+                  onClick={exportCSV}
+                  disabled={logs.length === 0}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg"
+                >
+                  📤 Export
+                </button>
+              </div>
+
+              {/* Status Indicator */}
+              <div className="mt-4 flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {isRunning ? 'Recognition Active' : 'Recognition Stopped'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recognized People Panel */}
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Recognized ({logs.length})
+                </h2>
+                {logs.length > 0 && (
+                  <button
+                    onClick={clearLogs}
+                    className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 font-medium"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {logs.length === 0 ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                    No faces recognized yet
+                  </p>
+                ) : (
+                  logs.map((name, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 px-4 py-3 rounded-lg"
+                    >
+                      <span className="text-green-600 dark:text-green-400 text-xl">✅</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{name}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Info Card */}
+            <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                💡 Tips
+              </h3>
+              <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                <li>• Ensure good lighting</li>
+                <li>• Face the camera directly</li>
+                <li>• Stay within frame</li>
+                <li>• Register users first</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-// cd F:\Intern\My Projects\Face-Recognition\backend
-// source venv/Scripts/activate
-// uvicorn main:app --reload

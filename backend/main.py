@@ -89,12 +89,15 @@ async def recognize_image(file: UploadFile = File(...)):
     boxes = []
 
     for face_encoding, location in zip(face_encodings, face_locations):
-        matches = face_recognition.compare_faces(list(known_encodings.values()), face_encoding)
+        # Use face_distance to find the best match (lowest distance)
+        face_distances = face_recognition.face_distance(list(known_encodings.values()), face_encoding)
         name = "Unknown"
 
-        if True in matches:
-            idx = matches.index(True)
-            name = list(known_encodings.keys())[idx]
+        if len(face_distances) > 0:
+            best_match_index = np.argmin(face_distances)
+            # Lower tolerance (0.5) for better accuracy with similar faces
+            if face_distances[best_match_index] < 0.5:
+                name = list(known_encodings.keys())[best_match_index]
 
         # Log attendance
         if name != "Unknown":

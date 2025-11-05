@@ -1,5 +1,55 @@
-# Ignore all .jpeg files in backend/images/
-backend/images/*.jpeg
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
 
-# Ignore all .jpg files in backend/known_faces/
+# Face data (privacy & generated files)
 backend/known_faces/*.jpg
+backend/known_faces/*.jpeg
+backend/known_faces/*.png
+backend/face_encodings/*.npy
+
+# Attendance logs (generated data)
+backend/attendance_logs/*.csv
+!backend/attendance_logs/.gitkeep
+
+# Keep folder structure
+!backend/known_faces/.gitkeep
+!backend/face_encodings/.gitkeep
+
+# Node.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.turbo/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
